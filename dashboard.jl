@@ -3,7 +3,7 @@ using HTTP
 using Dash, DashCoreComponents, DashHtmlComponents
 using DelimitedFiles
 using Printf
-# using Plotly
+using PlotlyBase
 # using Plots
 # plotly()
 
