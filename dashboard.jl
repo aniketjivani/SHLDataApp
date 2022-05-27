@@ -1,5 +1,4 @@
 @info "Launched"
-using HTTP
 using Dash, DashCoreComponents, DashHtmlComponents
 using DelimitedFiles
 using Printf
