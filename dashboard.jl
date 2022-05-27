@@ -4,17 +4,27 @@ using Dash, DashCoreComponents, DashHtmlComponents
 using DelimitedFiles
 using Printf
 using PlotlyBase
-# using Plots
-# plotly()
+# using PlotlyJS
 
+# using DataFrames, CSV
+# using RDatasets
+
+
+# iris = dataset("datasets", "iris")
 
 @info "Loaded"
 function makePlot(p)
     if isnothing(p)
         return Plot(1:100, rand(100),
-                       mode="markers"
-                       )
+                   mode="markers"
+                   )
     else
+#         fig = p1 = plot(
+#     iris, x=:SepalLength, y=iris.SepalWidth .+ p, color=:Species,
+#     mode="markers", marker_size=8
+# )
+#        return fig
+
         return Plot(1:100, rand(100) .+ p,
                        mode="markers"
                        )
