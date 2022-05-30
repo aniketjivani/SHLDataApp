@@ -178,7 +178,9 @@ dropdown_options = [Dict("label" => string.(i), "value" => i) for i in collect(-
 bg_options = [Dict("label" => string.(i), "value" => i) for i in [1, 4, 6, 8, 10, 13, 14, 16, 17, 19]]
 
 
-app=dash()
+app=dash(external_stylesheets=["https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"])
+
+app.title = "SHL Background plots for CR2154"
 
 app.layout = html_div() do
         html_h1("SHL Background Data",
@@ -203,6 +205,7 @@ app.layout = html_div() do
              dcc_radioitems(id="Background runs", options= bg_options, value=[4]),
     ],
             style = Dict("columnCount" => 2)), 
+    html_br(),
     html_div(style=Dict("columnCount"=>2),
              children=[
              #children=[
