@@ -3,7 +3,7 @@ using DelimitedFiles
 using Printf
 
 using Plots
-plotly()
+# plotly()
 
 
 using ColorSchemes
@@ -109,8 +109,8 @@ function makeLatPlots(filePath;
     end
     
     p = plot(obs, line=(:black, :dash, 2.5), label="OMNI")
-    plot!([mapTimeIdx], seriestype=:vline, line=(:black, 1), label="MapTime: $(mapTime)")
-    plot!([arrivalTimeIdx], seriestype=:vline, line=(:green, 1), label="Arrival: $(arrivalTime)")
+    plot!([mapTimeIdx], seriestype=:vline, line=(:black, 2), label="MapTime: $(mapTime)")
+    plot!([arrivalTimeIdx], seriestype=:vline, line=(:green, 2), label="Arrival: $(arrivalTime)")
 
 
     
@@ -134,29 +134,59 @@ function makeLatPlots(filePath;
     plot!(xticks=(tickVals, tickLabels))
 
 
-    if highlightLats == 7
-        plot!(title = "Highlighted Lat = $(highlightLats) (earth)" )
-    else
-        plot!(title = "Highlighted Lat = $(highlightLats)")
-    end
+    # if highlightLats == 7
+    #     plot!(title = "Highlighted Lat = $(highlightLats) (earth)", titlelocation=:center)
+    # else
+    #     plot!(title = "Highlighted Lat = $(highlightLats)", titlelocation=:center)
+    # end
 
     plot!(size=(800, 600))
     # return p
 
-    figure = (data = Plots.plotly_series(p), layout = Plots.plotly_layout(p))
+    dataFig = Plots.plotly_series(p)
+    layoutFig = Plots.plotly_layout(p)
+
+    # fix overlapping of axis title and tick labels
+    layoutFig[:xaxis][:standoff] = 20
+    layoutFig[:yaxis][:standoff] = 20
+
+    # fix layout title
+    if highlightLats == 7
+        titleText = "Highlighted Lat = $(highlightLats) (earth)"
+        
+    else
+        titleText = "Highlighted Lat = $(highlightLats)"
+
+    end
+    layoutFig[:title] = Dict{Symbol, Any}(:text=>titleText, :x=>0.5, :xanchor=>"center", :xref=>"paper")
+    ## fix title position to center - note, this modifies existing annotations keyword in layout and adding a `title` keyword DOES NOT do anything!
+
+    # layoutFig[:annotations][1][:x] = 1
+    # layoutFig[:annotations][1][:xanchor]=:right
+    # layoutFig[:annotations][1][:align] = "center"
+    # layoutFig[:title] = Dict{Symbol, Any}(:xref=> "paper", :xanchor=>"center")
+    
+    layoutFig[:margin] = Dict{Symbol, Any}(:l => 40, :b=> 40, :r=>0, :t=>30) 
+    figure = (data = dataFig, layout = layoutFig)
     return figure
 end
 
                    
 # Let's make the app :)
 
+dropdown_options = [Dict("label" => string.(i), "value" => i) for i in collect(-20:20)]
+bg_options = [Dict("label" => string.(i), "value" => i) for i in [1, 4, 6, 8, 10, 13, 14, 16, 17, 19]]
+
+
 app=dash()
 
 app.layout = html_div() do
-        html_h1("First Dash!😋😌",
+        html_h1("SHL Background Data",
                 style=(textAlign="center",
                        )
                 ),
+    
+    
         # html_label("Slider"),
         # dcc_slider(
         # id = "slider1",
@@ -165,14 +195,43 @@ app.layout = html_div() do
         # marks = Dict([i => (i == 1 ? "Label $(i)" : "$(i)") for i = 1:9]),
         # value = 5,
         # # type  = "number"
-        # ),
-        html_div("Example graph"),
-        dcc_graph(id="theplot",
-                  figure=makeLatPlots("./all_bg_shl_CR2154.jld"; bgRun=4)
-                  )
+    # ),
+    html_div(children=[
+             html_label("Select Latitudes"),
+        dcc_checklist(id="Latitudes", options = dropdown_options, value=[-4, 7]),
+        html_label("Select Background"),
+             dcc_radioitems(id="Background runs", options= bg_options, value=[4]),
+    ],
+            style = Dict("columnCount" => 2)), 
+    html_div(style=Dict("columnCount"=>2),
+             children=[
+             #children=[
+             #    html_h1("Plot of QoIs at different latitudes"),
+                           dcc_graph(id="UrPlot",
+                                       figure=makeLatPlots("./all_bg_shl_CR2154.jld"; bgRun=4),
+                                     #style=(display="inline-block")
+                                     ),
+                             dcc_graph(id="NpPlot",
+                                       figure=makeLatPlots("./all_bg_shl_CR2154.jld"; bgRun=4, qoi="Np", ylims=(0, 70)),
+                                      # style=(display="inline-block")
+                                       )
+            ]
+    )
     end
 
+callback!(app, Output("UrPlot", "figure"),
+          Input("Latitudes", "value"),
+          Input("Background runs", "value"),
+          ) do selectedLats, selectedBackground
+              makeLatPlots("./all_bg_shl_CR2154.jld"; bgRun=selectedBackground, highlightLats = selectedLats)
+          end
 
+callback!(app, Output("NpPlot", "figure"),
+          Input("Latitudes", "value"),
+          Input("Background runs", "value"),
+          ) do selectedLats, selectedBackground
+              makeLatPlots("./all_bg_shl_CR2154.jld"; bgRun=selectedBackground, highlightLats = selectedLats, qoi="Np", ylims=(0, 70))
+          end           
 # callback!(makePlot, app, CallbackId([], [(Symbol(:slider1), :value)])
 
 # callback!(makePlot,
