@@ -1,4 +1,5 @@
 using Dash, DashCoreComponents, DashHtmlComponents
+using DashTable
 using DelimitedFiles
 using Printf
 using NetCDF
@@ -145,7 +146,7 @@ function plotShiftedQoI(ots, plotIdx, times, lat, lon, latVec, lonVec;
 
         plot!([34], seriestype=:vline, line=(:green, 2), label="Arrival: 2014-09-12T15:26")
     # convert to plotly figure!!!!!
-     plot!(size=(500, 400))
+     plot!(size=(600, 400))
 
     titleText = "Lat=: " * "$(lat)" * " Lon=: " * "$(lon)"
     dataFig = Plots.plotly_series(pLatLon)
@@ -169,7 +170,7 @@ Note that plotting_range will need to be converted back into original index whil
 function latLonPlotAllSamples(chosenQoI, plotIdx, timesSim, lat, lon;
                             plot_obs=true, 
 			    palette=:Dark2_8,
-			    tickInterval=12,
+			    tickInterval=16,
 			    linealpha=0.6,
 			    xlabel="",
                             ylabel="Ur"
@@ -199,7 +200,7 @@ function latLonPlotAllSamples(chosenQoI, plotIdx, timesSim, lat, lon;
 
 		obsTimeTicks = range(timesSim[1], timesSim[end], step=Hour(tickInterval))
 		SHLTicks  = findall(in(obsTimeTicks), timesSim)
-    	SHLTickLabels = Dates.format.(obsTimeTicks, "dd-mm")
+    	SHLTickLabels = Dates.format.(obsTimeTicks, "dd-mm HH:MM")
 
 	
 		if nLines <= 30
