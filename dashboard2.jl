@@ -10,7 +10,7 @@ using ColorSchemes
 using Dates
 using JLD
 using ShiftedArrays
-using CSV, DataFrames
+# using CSV, DataFrames
 
 
 """
@@ -447,7 +447,7 @@ startTime = ncgetatt(EVENT_PATH, "time", "shlStartTime")
 
 times = timeElapsed .+ Dates.DateTime(startTime, "yyyy_mm_ddTHH:MM:SS")
 
-allRMSEData = CSV.read("allRMSEData_CR2154_old.csv", DataFrame)
+# allRMSEData = CSV.read("allRMSEData_CR2154_old.csv", DataFrame)
 
 explanatory_text = "
 #### Overview:
