@@ -1,7 +1,7 @@
 using Dash, DashCoreComponents, DashHtmlComponents
 using DelimitedFiles
 using Printf
-
+using NetCDF
 using Plots
 # plotly()
 
@@ -9,6 +9,8 @@ using Plots
 using ColorSchemes
 using Dates
 using JLD
+using ShiftedArrays
+using CSV, DataFrames
 
 
 """
@@ -102,44 +104,139 @@ end
 Make plot of given run at given latitude and longitude and also plot the 
 corresponding shifted version based on specified shifts.
 """
-function plotShiftedQoI(sim, obs, ots, plotIdx, times, lat, lon, latVec, lonVec;  											
+function plotShiftedQoI(ots, plotIdx, times, lat, lon, latVec, lonVec;
                         plot_obs=true, 
                         palette=:Dark2_8,
                         tickInterval=12,
                         tickFormat="dd-mm",
                         linealpha=0.6,
-                        xlabel="",
-                        ylabel="Ur",
+                        xlabel="start time",
+                        qoi="Ur",
                         ylims=(200, 800),
                         legend=true,
                         )
-
-    pLatLon = latLonPlotAllSamples(sim, obs, plotIdx, times, lat, lon, latVec, lonVec;  											
-                                plot_obs=plot_obs, 
-                                palette=palette,
-                                tickInterval=tickInterval,
-                                tickFormat=tickFormat,
-                                linealpha=linealpha,
-                                xlabel=xlabel,
-                                ylabel=ylabel,
-                                ylims=ylims,
-                                legend=legend
-                                )
-    
-    latIndex = findall(x -> x==lat, latVec)[1]
+        latIndex = findall(x -> x==lat, latVec)[1]
     lonIndex = findall(x -> x==lon, lonVec)[1]
+		if qoi == "Ur"
+			#obs = UrObs
+			sim = UrSim[latIndex, lonIndex, :, plotIdx]
+			#ylimits=(200, 800)
+		elseif qoi == "Bz"
+			#obs = BzObs
+			sim = BzSim[latIndex, lonIndex, :, plotIdx]
+			#ylimits=(-20, 20)
+		elseif qoi == "Np"
+			#obs = NpObs
+			sim = NpSim[latIndex, lonIndex, :, plotIdx]
+			#ylimits=(0, 100)
+		end
+    pLatLon = latLonPlotAllSamples(qoi, plotIdx, times, lat, lon; palette=:OrRd_9, ylabel=qoi, xlabel=xlabel) 
+
                             
     chosenOTS = ots[latIndex, lonIndex, plotIdx]
-    qoiShifted = lag(sim[latIndex, lonIndex, :, plotIdx], chosenOTS)
+    qoiShifted = lag(sim, chosenOTS)
     plot!(pLatLon,
         qoiShifted, 
         line=(:blue, 2),
         label = "Shifted, OTS = $(chosenOTS)"
         )
-    
-    # convert to plotly figure!!!!!
-end
 
+        plot!([34], seriestype=:vline, line=(:green, 2), label="Arrival: 2014-09-12T15:26")
+    # convert to plotly figure!!!!!
+     plot!(size=(500, 400))
+
+    titleText = "Lat=: " * "$(lat)" * " Lon=: " * "$(lon)"
+    dataFig = Plots.plotly_series(pLatLon)
+    #dataFig[1][:x] = string.(lonVals)
+    #dataFig[1][:y] = string.(latVals)
+    #dataFig[1][:type] = "heatmap"
+    #dataFig[1][:z] = [latLonQoI[i, :, plotIdx] for i in 1:length(latVals)]
+    layoutFig = Plots.plotly_layout(pLatLon)
+
+    # fix overlapping of axis title and tick labels
+   layoutFig[:xaxis][:standoff] = 20
+   layoutFig[:yaxis][:standoff] = 20
+
+   layoutFig[:title] = Dict{Symbol, Any}(:text=>titleText, :x=>0.5, :xanchor=>"center", :xref=>"paper")
+    delete!(layoutFig, :annotations)
+    layoutFig[:margin] = Dict{Symbol, Any}(:l => 40, :b=> 40, :r=>0, :t=>30) 
+    figure = (data = dataFig, layout = layoutFig)
+    return figure
+end
+"""
+chosenQoI can be one of Ur, Np, Bz and B. Plotting_range can be something like 1:5, and so on.
+Note that plotting_range will need to be converted back into original index while processing results.
+"""
+function latLonPlotAllSamples(chosenQoI, plotIdx, timesSim, lat, lon;
+                            plot_obs=true, 
+			    palette=:Dark2_8,
+			    tickInterval=12,
+			    linealpha=0.6,
+			    xlabel="",
+                            ylabel="Ur"
+			    )
+    
+		latIndex = findall(x -> x==lat, latitudes)[1]
+		lonIndex = findall(x -> x==lon, longitudes)[1]
+	
+		if chosenQoI == "Ur"
+			obs = UrObs
+			qoi = UrSim[latIndex, lonIndex, :, plotIdx]
+			ylimits=(200, 800)
+		elseif chosenQoI == "Bz"
+			obs = BzObs
+			qoi = BzSim[latIndex, lonIndex, :, plotIdx]
+			ylimits=(-20, 20)
+		elseif chosenQoI == "Np"
+			obs = NpObs
+			qoi = NpSim[latIndex, lonIndex, :, plotIdx]
+			ylimits=(0, 100)
+		end
+
+    nLines = length(plotIdx)
+		nTimePoints = size(qoi, 1)
+
+		obsTimeTicks = range(timesSim[1], timesSim[end], step=Hour(tickInterval))
+		SHLTicks  = findall(in(obsTimeTicks), timesSim)
+    	SHLTickLabels = Dates.format.(obsTimeTicks, "dd-mm")
+
+	
+		if nLines <= 30
+			if nLines == 1
+				lineLabels = "run " * string(runsToKeep[plotIdx] + 20)
+			else
+				labelsVec = "run " .* string.(runsToKeep[plotIdx] .+ 20)
+				lineLabels = reshape(labelsVec, 1, nLines)
+			end
+			p = plot(1:nTimePoints, qoi, line=(2.5), linealpha=linealpha, labels=lineLabels, line_z = (1:nLines)', color=palette)
+
+			plot!(xticks=(SHLTicks, SHLTickLabels))
+			plot!(xminorticks=tickInterval)
+			plot!(colorbar=:false)
+		else
+			p = plot(1:nTimePoints, qoi, line=(2.5), linealpha=linealpha, labels="", line_z = (1:nLines)', color=palette)
+			plot!(xticks=(SHLTicks, SHLTickLabels))
+			plot!(xminorticks=tickInterval)
+		    plot!(colorbar=false)
+                end
+                if plot_obs
+			plot!(1:nTimePoints, obs, line=(:dash, :black, 3), label="OMNI")
+		end
+		if xlabel==""
+			plot!(xlabel="")
+		else
+                    plot!(xlabel="Start Time: $startTime")
+		#	plot!(xlabel="Start Time: $(Dates.format(startTime, "dd-u-yy HH:MM:SS"))")
+		end
+    # plot!(1:nTimePoints, 
+		plot!(ylabel=chosenQoI)
+		plot!(xlims=(1, nTimePoints), 
+			  ylims=ylimits,
+			  # xticks=(1:9:nTimePoints, string.(1:9:nTimePoints)),
+			 legend=:outertopright
+			 )
+    # plot!(title="Lat=" * "$lat" * " Lon=" * "$lon")
+end
 
 """
 Take in shl data, obs data at all latitudes for a given background (defaults to 4 for CR2154), plot that, mark map time and shock arrival time. also highlight latitudes based on optional argument (defaults to earth and -4)
@@ -267,6 +364,8 @@ function makeLatPlots(filePath;
     return figure
 end
 
+
+
 """
 Function to take in distance data and plot summary showing variability across backgrounds!
 """
@@ -326,6 +425,29 @@ bg_options = [Dict("label" => string.(i), "value" => i) for i in [1, 4, 6, 8, 10
 dist_data = load("bg_2154_distances.jld", "summed_dist")
 runsToKeep = load("restart_shl_CR2154.jld", "runsToKeep")
 UrOptRMSE, NpOptRMSE, BzOptRMSE = loadRMSEData("restart_shl_CR2154.jld")
+UrOTS = load("restart_shl_CR2154.jld", "otsUr")
+
+# Load QoI data here!
+EVENT_PATH = "shl_2021_11_08_AWSoM_CR2154.nc"
+UrSim = ncread(EVENT_PATH, "UrSim")
+BzSim = ncread(EVENT_PATH, "BzSim")
+NpSim = ncread(EVENT_PATH, "NpSim")
+#BSim  = ncread(EVENT_PATH, "BSim") 
+	
+UrObs = ncread(EVENT_PATH, "UrObs")
+BzObs = ncread(EVENT_PATH, "BzObs")
+NpObs = ncread(EVENT_PATH, "NpObs")
+#BObs  = ncread(EVENT_PATH, "BObs")
+
+latitudes = ncread(EVENT_PATH, "lat")
+longitudes = ncread(EVENT_PATH, "lon")
+	
+timeElapsed = Dates.Hour.(ncread(EVENT_PATH, "time"))
+startTime = ncgetatt(EVENT_PATH, "time", "shlStartTime")
+
+times = timeElapsed .+ Dates.DateTime(startTime, "yyyy_mm_ddTHH:MM:SS")
+
+allRMSEData = CSV.read("allRMSEData_CR2154_old.csv", DataFrame)
 
 explanatory_text = "
 #### Overview:
@@ -419,7 +541,31 @@ app.layout = html_div() do
                            figure=plotLatLonHeatmap(sort([collect(-10:2:20); 7]), collect(170:2:190), BzOptRMSE, 1; qoi = "Bz", clims=(0, 20), palette=:YlOrRd_9, colorbar=true),
                            style=Dict("width"=>"32%", "display"=>"inline-block")
                            )
-             ])            
+             ]),
+    html_div(
+    children=[
+        dcc_graph(id="UrSim",
+                  figure=plotShiftedQoI(UrOTS, 1, times, 7, 180, latitudes, longitudes; palette=:OrRd_9, xlabel="start time", qoi="Ur", legend=true),  
+                  style=Dict("width"=>"32%", "display"=>"inline-block")
+        ),
+        dcc_graph(id="NpSim",
+                  figure=plotShiftedQoI(UrOTS, 1, times, 7, 180, latitudes, longitudes; palette=:OrRd_9, xlabel="start time", qoi="Np", legend=true),
+                  style=Dict("width"=>"32%", "display"=>"inline-block")
+        ),
+        dcc_graph(id="BzSim",
+                  figure=plotShiftedQoI(UrOTS, 1, times, 7, 180, latitudes, longitudes; palette=:OrRd_9, xlabel="start time", qoi="Bz", legend=true),
+                  style=Dict("width"=>"32%", "display"=>"inline-block")
+        )
+        ]
+    )
+    # html_div(
+    # children=html_table([
+    # html_thead(html_tr([html_th(col) for col in names(allRMSEData)])),
+    # html_tbody([
+    #     html_tr([html_td(allRMSEData[r, c]) for c in names(allRMSEData)]) for r = 1:min(nrow(allRMSEData), size(allRMSEData, 1))]),
+    # ], style=Dict("text-align"=>"center"))
+    # )
+    # RMSE table
 end
 
 callback!(app, Output("UrPlot", "figure"),
@@ -460,6 +606,30 @@ callback!(app, Output("BzHeatmap", "figure"),
           Input("Longitude Slider", "value"),
           ) do selectedPlot, selectedLat, selectedLon
              plotLatLonHeatmap(sort([collect(-10:2:20); 7]), collect(170:2:190), BzOptRMSE, selectedPlot; lat=selectedLat, lon=selectedLon, qoi = "Bz", clims=(0, 20), palette=:YlOrRd_9, colorbar=true)
+          end
+
+callback!(app, Output("UrSim", "figure"),
+          Input("Plot Idx Slider", "value"),
+          Input("Latitude Slider", "value"),
+          Input("Longitude Slider", "value"),
+          ) do selectedPlot, selectedLat, selectedLon
+               plotShiftedQoI(UrOTS, selectedPlot, times, selectedLat, selectedLon, latitudes, longitudes; palette=:OrRd_9, xlabel="start time", qoi="Ur", legend=true)
+          end
+
+callback!(app, Output("NpSim", "figure"),
+          Input("Plot Idx Slider", "value"),
+          Input("Latitude Slider", "value"),
+          Input("Longitude Slider", "value"),
+          ) do selectedPlot, selectedLat, selectedLon
+               plotShiftedQoI(UrOTS, selectedPlot, times, selectedLat, selectedLon, latitudes, longitudes; palette=:OrRd_9, xlabel="start time", qoi="Np", legend=true)
+          end
+
+callback!(app, Output("BzSim", "figure"),
+          Input("Plot Idx Slider", "value"),
+          Input("Latitude Slider", "value"),
+          Input("Longitude Slider", "value"),
+          ) do selectedPlot, selectedLat, selectedLon
+               plotShiftedQoI(UrOTS, selectedPlot, times, selectedLat, selectedLon, latitudes, longitudes; palette=:OrRd_9, xlabel="start time", qoi="Bz", legend=true)
              end
 # port = something(tryparse(Int, get(ARGS, 1, "")), tryparse(Int, get(ENV, "PORT", "")), 8080)
 
