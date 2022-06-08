@@ -306,7 +306,7 @@ function makeLatPlots(filePath;
     plot!([mapTimeIdx], seriestype=:vline, line=(:black, 2), label="MapTime: $(mapTime)")
     plot!([arrivalTimeIdx], seriestype=:vline, line=(:green, 2), label="Arrival: $(arrivalTime)")
 
-
+    plot!(xlims=(1, arrivalTimeIdx + 24))
     
     
     plot!(shl_data,
