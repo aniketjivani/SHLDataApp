@@ -2,7 +2,7 @@ using Dash, DashCoreComponents, DashHtmlComponents
 using DelimitedFiles
 using Printf
 using NetCDF
-# using Plots
+using Plots
 # plotly()
 
 
@@ -115,6 +115,7 @@ function plotShiftedQoI(ots, plotIdx, times, lat, lon, latVec, lonVec;
                         ylims=(200, 800),
                         legend=true,
                         )
+#    plotly()
         latIndex = findall(x -> x==lat, latVec)[1]
     lonIndex = findall(x -> x==lon, lonVec)[1]
 		if qoi == "Ur"
@@ -266,7 +267,7 @@ function makeLatPlots(filePath;
                       dpi=500
                       )
     
-
+ #plotly()
     d = load(filePath)
 
     
