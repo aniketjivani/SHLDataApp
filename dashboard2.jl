@@ -2,7 +2,7 @@ using Dash, DashCoreComponents, DashHtmlComponents
 using DelimitedFiles
 using Printf
 using NetCDF
-using Plots
+# using Plots
 # plotly()
 
 
@@ -119,15 +119,16 @@ function plotShiftedQoI(ots, plotIdx, times, lat, lon, latVec, lonVec;
     lonIndex = findall(x -> x==lon, lonVec)[1]
 		if qoi == "Ur"
 			#obs = UrObs
-			sim = UrSim[latIndex, lonIndex, :, plotIdx]
+			sim = ncread(EVENT_PATH, "UrSim")[latIndex, lonIndex, :, plotIdx]
 			#ylimits=(200, 800)
 		elseif qoi == "Bz"
-			#obs = BzObs
-			sim = BzSim[latIndex, lonIndex, :, plotIdx]
+		    #obs = BzObs
+                        sim = ncread(EVENT_PATH, "BzSim")[latIndex, lonIndex, :, plotIdx]
+			# sim = BzSim[latIndex, lonIndex, :, plotIdx]
 			#ylimits=(-20, 20)
 		elseif qoi == "Np"
 			#obs = NpObs
-			sim = NpSim[latIndex, lonIndex, :, plotIdx]
+			sim = ncread(EVENT_PATH, "NpSim")[latIndex, lonIndex, :, plotIdx]
 			#ylimits=(0, 100)
 		end
     pLatLon = latLonPlotAllSamples(qoi, plotIdx, times, lat, lon; palette=:OrRd_9, ylabel=qoi, xlabel=xlabel) 
@@ -147,10 +148,7 @@ function plotShiftedQoI(ots, plotIdx, times, lat, lon, latVec, lonVec;
 
     titleText = "Lat=: " * "$(lat)" * " Lon=: " * "$(lon)"
     dataFig = Plots.plotly_series(pLatLon)
-    #dataFig[1][:x] = string.(lonVals)
-    #dataFig[1][:y] = string.(latVals)
-    #dataFig[1][:type] = "heatmap"
-    #dataFig[1][:z] = [latLonQoI[i, :, plotIdx] for i in 1:length(latVals)]
+    
     layoutFig = Plots.plotly_layout(pLatLon)
 
     # fix overlapping of axis title and tick labels
@@ -180,16 +178,18 @@ function latLonPlotAllSamples(chosenQoI, plotIdx, timesSim, lat, lon;
 		lonIndex = findall(x -> x==lon, longitudes)[1]
 	
 		if chosenQoI == "Ur"
-			obs = UrObs
-			qoi = UrSim[latIndex, lonIndex, :, plotIdx]
+		    obs = UrObs
+                    qoi = ncread(EVENT_PATH, "UrSim")[latIndex, lonIndex, :, plotIdx]
+			# qoi = UrSim[latIndex, lonIndex, :, plotIdx]
 			ylimits=(200, 800)
 		elseif chosenQoI == "Bz"
-			obs = BzObs
-			qoi = BzSim[latIndex, lonIndex, :, plotIdx]
+		    obs = BzObs
+                    qoi = ncread(EVENT_PATH, "BzSim")[latIndex, lonIndex, :, plotIdx]
+			# qoi = BzSim[latIndex, lonIndex, :, plotIdx]
 			ylimits=(-20, 20)
 		elseif chosenQoI == "Np"
-			obs = NpObs
-			qoi = NpSim[latIndex, lonIndex, :, plotIdx]
+		    obs = NpObs
+                    qoi = ncread(EVENT_PATH, "NpSim")[latIndex, lonIndex, :, plotIdx]
 			ylimits=(0, 100)
 		end
 
