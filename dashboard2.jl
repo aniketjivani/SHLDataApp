@@ -429,9 +429,9 @@ UrOTS = load("restart_shl_CR2154.jld", "otsUr")
 
 # Load QoI data here!
 EVENT_PATH = "shl_2021_11_08_AWSoM_CR2154.nc"
-UrSim = ncread(EVENT_PATH, "UrSim")
-BzSim = ncread(EVENT_PATH, "BzSim")
-NpSim = ncread(EVENT_PATH, "NpSim")
+#UrSim = ncread(EVENT_PATH, "UrSim")
+#BzSim = ncread(EVENT_PATH, "BzSim")
+#NpSim = ncread(EVENT_PATH, "NpSim")
 #BSim  = ncread(EVENT_PATH, "BSim") 
 	
 UrObs = ncread(EVENT_PATH, "UrObs")
