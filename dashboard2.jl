@@ -121,16 +121,19 @@ function plotShiftedQoI(ots, plotIdx, times, lat, lon, latVec, lonVec;
     lonIndex = findall(x -> x==lon, lonVec)[1]
 		if qoi == "Ur"
 			#obs = UrObs
-			sim = ncread(EVENT_PATH, "UrSim")[latIndex, lonIndex, :, plotIdx]
+		    sim = ncread(EVENT_PATH, "UrSim")[latIndex, lonIndex, :, plotIdx]
+                    simEarth = ncread(EVENT_PATH, "UrSim")[10, 6, :, plotIdx]
 			#ylimits=(200, 800)
 		elseif qoi == "Bz"
 		    #obs = BzObs
-                        sim = ncread(EVENT_PATH, "BzSim")[latIndex, lonIndex, :, plotIdx]
+                    sim = ncread(EVENT_PATH, "BzSim")[latIndex, lonIndex, :, plotIdx]
+                    simEarth = ncread(EVENT_PATH, "BzSim")[10, 6, :, plotIdx]
 			# sim = BzSim[latIndex, lonIndex, :, plotIdx]
 			#ylimits=(-20, 20)
 		elseif qoi == "Np"
 			#obs = NpObs
-			sim = ncread(EVENT_PATH, "NpSim")[latIndex, lonIndex, :, plotIdx]
+		    sim = ncread(EVENT_PATH, "NpSim")[latIndex, lonIndex, :, plotIdx]
+                    simEarth = ncread(EVENT_PATH, "NpSim")[10, 6, :, plotIdx]
 			#ylimits=(0, 100)
 		end
     pLatLon = latLonPlotAllSamples(qoi, plotIdx, times, lat, lon; palette=:OrRd_9, ylabel=qoi, xlabel=xlabel) 
@@ -140,11 +143,13 @@ function plotShiftedQoI(ots, plotIdx, times, lat, lon, latVec, lonVec;
     qoiShifted = lag(sim, chosenOTS)
     plot!(pLatLon,
         qoiShifted, 
-        line=(:blue, 2),
+        line=(:green, 2),
         label = "Shifted, OTS = $(chosenOTS)"
-        )
+          )
 
-        plot!([34], seriestype=:vline, line=(:green, 2), label="Arrival: 2014-09-12T15:26")
+    plot!(pLatLon, simEarth, line=(:blue, 2), label= "Earth")
+
+        plot!([34], seriestype=:vline, line=(:red, 2), label="Arrival: 2014-09-12T15:26")
     # convert to plotly figure!!!!!
      plot!(size=(600, 400))
 
@@ -307,7 +312,7 @@ function makeLatPlots(filePath;
     plot!([mapTimeIdx], seriestype=:vline, line=(:black, 2), label="MapTime: $(mapTime)")
     plot!([arrivalTimeIdx], seriestype=:vline, line=(:green, 2), label="Arrival: $(arrivalTime)")
 
-    plot!(xlims=(1, arrivalTimeIdx + 24))
+#    plot!(xlims=(1, arrivalTimeIdx + 24))
     
     
     plot!(shl_data,
