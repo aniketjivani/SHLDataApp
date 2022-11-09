@@ -487,15 +487,15 @@ The sliders below control the run we are viewing and the highlighted latitude an
 app=dash()
 app.title = "SHL Background plots for CR2154"
 
-app.layout = html_div() do
+app.layout = DashHtmlComponents.html_div() do
     html_h1("SHL Background Data", style=(textAlign="center")),
     dcc_markdown(explanatory_text),
-    html_div(children=[html_label("Select Latitudes"),
+    DashHtmlComponents.html_div(children=[html_label("Select Latitudes"),
         dcc_checklist(id="Latitudes", options = dropdown_options, value=[-4, 7]),
         html_label("Select Background"),
         dcc_radioitems(id="Background runs", options= bg_options, value=[4])],
         style = Dict("columnCount" => 2)),
-    html_div(
+    DashHtmlComponents.html_div(
              children=[
                  dcc_graph(id="UrPlot",
                            figure=makeLatPlots("./all_bg_shl_CR2154.jld"; bgRun=4), style=Dict("width"=>"48%", "display"=>"inline-block")),
@@ -534,7 +534,7 @@ app.layout = html_div() do
         value=180,
         marks=Dict([i => string.(i) for i in collect(170:2:190)])       
     ),
-    html_div(# style=Dict("columnCount"=>3),
+    DashHtmlComponents.html_div(# style=Dict("columnCount"=>3),
              children=[
                  dcc_graph(id="UrHeatmap",
                            figure=plotLatLonHeatmap(sort([collect(-10:2:20); 7]), collect(170:2:190), UrOptRMSE, 1; qoi = "Ur", clims=(0, 350), palette=:YlOrRd_9, colorbar=true),
@@ -549,7 +549,7 @@ app.layout = html_div() do
                            style=Dict("width"=>"32%", "display"=>"inline-block")
                            )
              ]),
-    html_div(
+    DashHtmlComponents.html_div(
     children=[
         dcc_graph(id="UrSim",
                   figure=plotShiftedQoI(UrOTS, 1, times, 7, 180, latitudes, longitudes; palette=:OrRd_9, xlabel="start time", qoi="Ur", legend=true),  
