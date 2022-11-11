@@ -121,19 +121,19 @@ function plotShiftedQoI(ots, plotIdx, times, lat, lon, latVec, lonVec;
     lonIndex = findall(x -> x==lon, lonVec)[1]
 		if qoi == "Ur"
 			#obs = UrObs
-		    sim = ncread(EVENT_PATH, "UrSim")[latIndex, lonIndex, :, plotIdx]
-                    simEarth = ncread(EVENT_PATH, "UrSim")[10, 6, :, plotIdx]
+		    sim = load(ALL_DATA)["UrSim"][latIndex, lonIndex, :, plotIdx]
+                    simEarth = load(ALL_DATA)["UrSim"][10, 6, :, plotIdx]
 			#ylimits=(200, 800)
 		elseif qoi == "Bz"
 		    #obs = BzObs
-                    sim = ncread(EVENT_PATH, "BzSim")[latIndex, lonIndex, :, plotIdx]
-                    simEarth = ncread(EVENT_PATH, "BzSim")[10, 6, :, plotIdx]
+                    sim = load(ALL_DATA)["BzSim"][latIndex, lonIndex, :, plotIdx]
+                    simEarth = load(ALL_DATA)["BzSim"][10, 6, :, plotIdx]
 			# sim = BzSim[latIndex, lonIndex, :, plotIdx]
 			#ylimits=(-20, 20)
 		elseif qoi == "Np"
 			#obs = NpObs
-		    sim = ncread(EVENT_PATH, "NpSim")[latIndex, lonIndex, :, plotIdx]
-                    simEarth = ncread(EVENT_PATH, "NpSim")[10, 6, :, plotIdx]
+		    sim = load(ALL_DATA)["NpSim"][latIndex, lonIndex, :, plotIdx]
+                    simEarth = load(ALL_DATA)["NpSim"][10, 6, :, plotIdx]
 			#ylimits=(0, 100)
 		end
     pLatLon = latLonPlotAllSamples(qoi, plotIdx, times, lat, lon; palette=:OrRd_9, ylabel=qoi, xlabel=xlabel) 
@@ -186,18 +186,19 @@ function latLonPlotAllSamples(chosenQoI, plotIdx, timesSim, lat, lon;
 	
 		if chosenQoI == "Ur"
 		    obs = UrObs
-                    qoi = ncread(EVENT_PATH, "UrSim")[latIndex, lonIndex, :, plotIdx]
-			# qoi = UrSim[latIndex, lonIndex, :, plotIdx]
-			ylimits=(200, 800)
+                    # qoi = ncread(EVENT_PATH, "UrSim")[latIndex, lonIndex, :, plotIdx]
+		    qoi = UrSim[latIndex, lonIndex, :, plotIdx]
+		    ylimits=(200, 800)
 		elseif chosenQoI == "Bz"
 		    obs = BzObs
-                    qoi = ncread(EVENT_PATH, "BzSim")[latIndex, lonIndex, :, plotIdx]
-			# qoi = BzSim[latIndex, lonIndex, :, plotIdx]
-			ylimits=(-20, 20)
+                    # qoi = ncread(EVENT_PATH, "BzSim")[latIndex, lonIndex, :, plotIdx]
+		    qoi = BzSim[latIndex, lonIndex, :, plotIdx]
+		    ylimits=(-20, 20)
 		elseif chosenQoI == "Np"
 		    obs = NpObs
-                    qoi = ncread(EVENT_PATH, "NpSim")[latIndex, lonIndex, :, plotIdx]
-			ylimits=(0, 100)
+                    # qoi = ncread(EVENT_PATH, "NpSim")[latIndex, lonIndex, :, plotIdx]
+                    qoi = NpSim[latIndex, lonIndex, :, plotIdx]
+		    ylimits=(0, 100)
 		end
 
     nLines = length(plotIdx)
@@ -429,32 +430,61 @@ dropdown_options = [Dict("label" => string.(i), "value" => i) for i in collect(-
 bg_options = [Dict("label" => string.(i), "value" => i) for i in [1, 4, 6, 8, 10, 13, 14, 16, 17, 19]]
 
 
-dist_data = load("bg_2154_distances.jld", "summed_dist")
-runsToKeep = load("restart_shl_CR2154.jld", "runsToKeep")
-UrOptRMSE, NpOptRMSE, BzOptRMSE = loadRMSEData("restart_shl_CR2154.jld")
-UrOTS = load("restart_shl_CR2154.jld", "otsUr")
+# dist_data = load("bg_2154_distances.jld", "summed_dist")
+# runsToKeep = load("restart_shl_CR2154.jld", "runsToKeep")
+# UrOptRMSE, NpOptRMSE, BzOptRMSE = loadRMSEData("restart_shl_CR2154.jld")
+# UrOTS = load("restart_shl_CR2154.jld", "otsUr")
+
+ALL_DATA = "./SHL_APP_DATA.jld"
+
+all_data = load(ALL_DATA)
+
+dist_data = all_data["dist_data"]
+runsToKeep = all_data["runsToKeep"]
+UrOptRMSE = all_data["UrOptRMSE"]
+NpOptRMSE = all_data["NpOptRMSE"]
+BzOptRMSE = all_data["BzOptRMSE"]
+
+UrOTS = all_data["UrOTS"]
+
+# # Load QoI data here!
+# EVENT_PATH = "shl_2021_11_08_AWSoM_CR2154.nc"
+# #UrSim = ncread(EVENT_PATH, "UrSim")
+# #BzSim = ncread(EVENT_PATH, "BzSim")
+# #NpSim = ncread(EVENT_PATH, "NpSim")
+# #BSim  = ncread(EVENT_PATH, "BSim") 
+	
+# UrObs = ncread(EVENT_PATH, "UrObs")
+# BzObs = ncread(EVENT_PATH, "BzObs")
+# NpObs = ncread(EVENT_PATH, "NpObs")
+# #BObs  = ncread(EVENT_PATH, "BObs")
 
 # Load QoI data here!
-EVENT_PATH = "shl_2021_11_08_AWSoM_CR2154.nc"
-#UrSim = ncread(EVENT_PATH, "UrSim")
-#BzSim = ncread(EVENT_PATH, "BzSim")
-#NpSim = ncread(EVENT_PATH, "NpSim")
-#BSim  = ncread(EVENT_PATH, "BSim") 
+
+UrSim = all_data["UrSim"]
+BzSim = all_data["BzSim"]
+NpSim = all_data["NpSim"]
+                        
+UrObs = all_data["UrObs"]
+BzObs = all_data["BzObs"]
+NpObs = all_data["NpObs"]
+
+
+latitudes = all_data["latitudes"]
+longitudes = all_data["longitudes"]
+
+times = all_data["times"]
+startTime = all_data["startTime"]
+
+# latitudes = ncread(EVENT_PATH, "lat")
+# longitudes = ncread(EVENT_PATH, "lon")
 	
-UrObs = ncread(EVENT_PATH, "UrObs")
-BzObs = ncread(EVENT_PATH, "BzObs")
-NpObs = ncread(EVENT_PATH, "NpObs")
-#BObs  = ncread(EVENT_PATH, "BObs")
+# timeElapsed = Dates.Hour.(ncread(EVENT_PATH, "time"))
+# startTime = ncgetatt(EVENT_PATH, "time", "shlStartTime")
 
-latitudes = ncread(EVENT_PATH, "lat")
-longitudes = ncread(EVENT_PATH, "lon")
-	
-timeElapsed = Dates.Hour.(ncread(EVENT_PATH, "time"))
-startTime = ncgetatt(EVENT_PATH, "time", "shlStartTime")
+# times = timeElapsed .+ Dates.DateTime(startTime, "yyyy_mm_ddTHH:MM:SS")
 
-times = timeElapsed .+ Dates.DateTime(startTime, "yyyy_mm_ddTHH:MM:SS")
-
-# allRMSEData = CSV.read("allRMSEData_CR2154_old.csv", DataFrame)
+# # allRMSEData = CSV.read("allRMSEData_CR2154_old.csv", DataFrame)
 
 explanatory_text = "
 #### Overview:
